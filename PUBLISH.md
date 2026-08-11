@@ -35,3 +35,7 @@ git add .
 git commit -m "Describe your change"
 git push
 ```
+
+## Supabase Setup
+
+Open your Supabase project, go to **SQL Editor**, paste the contents of `supabase-schema.sql`, and run it once. Without this step, the app will still open but will fall back to each browser's local storage.

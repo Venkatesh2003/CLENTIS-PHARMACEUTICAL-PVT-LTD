@@ -3,7 +3,7 @@
 // Main Application Logic
 // ═══════════════════════════════════════════════════════
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // State
   let selectedMedicines = [];
   let dropdownOpen = false;
@@ -22,10 +22,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const showMrpToggle = document.getElementById('show-mrp');
 
   // ── Initialize ──────────────────────────────────────
-  initMedicines();
+  const synced = await initClentisData();
   renderDropdown();
   renderPresets();
   updatePreview();
+  showToast(synced ? 'Connected to shared Supabase database' : 'Using local browser storage. Run Supabase setup SQL to enable sharing.', synced ? 'success' : 'error');
 
   // ── Multi-Select Dropdown ───────────────────────────
 
@@ -270,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Presets ─────────────────────────────────────────
 
-  window.savePreset = function() {
+  window.savePreset = async function() {
     const doctorName = doctorInput.value.trim();
     if (!doctorName) {
       showToast('Please enter a doctor name to save as preset', 'error');
@@ -292,16 +293,20 @@ document.addEventListener('DOMContentLoaded', () => {
       updatedAt: new Date().toISOString()
     };
 
-    if (existingIdx > -1) {
-      presets[existingIdx] = preset;
-      showToast(`Preset updated for Dr. ${doctorName}`, 'success');
-    } else {
-      presets.push(preset);
-      showToast(`Preset saved for Dr. ${doctorName}`, 'success');
-    }
+    try {
+      if (existingIdx > -1) {
+        presets[existingIdx] = preset;
+      } else {
+        presets.push(preset);
+      }
 
-    savePresets(presets);
-    renderPresets();
+      await savePresets(presets);
+      renderPresets();
+      showToast(existingIdx > -1 ? `Preset updated for Dr. ${doctorName}` : `Preset saved for Dr. ${doctorName}`, 'success');
+    } catch (error) {
+      console.error(error);
+      showToast('Could not save preset to Supabase', 'error');
+    }
   };
 
   function renderPresets() {
@@ -353,13 +358,16 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast(`Loaded preset for Dr. ${preset.doctorName}`, 'success');
   };
 
-  window.deletePreset = function(presetId) {
+  window.deletePreset = async function(presetId) {
     if (!confirm('Delete this preset?')) return;
-    let presets = getPresets();
-    presets = presets.filter(p => p.id !== presetId);
-    savePresets(presets);
-    renderPresets();
-    showToast('Preset deleted', 'success');
+    try {
+      await deletePresetById(presetId);
+      renderPresets();
+      showToast('Preset deleted', 'success');
+    } catch (error) {
+      console.error(error);
+      showToast('Could not delete preset from Supabase', 'error');
+    }
   };
 
   window.clearSelection = function() {

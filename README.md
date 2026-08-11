@@ -18,3 +18,9 @@ Then visit:
 ## GitHub Pages
 
 This app is ready to publish from the repository root using GitHub Pages.
+
+## Shared Database
+
+The app uses Supabase for shared medicines and doctor presets across phone, PC, and any other device.
+
+Before using the shared database, open your Supabase project, go to **SQL Editor**, and run the SQL in `supabase-schema.sql` once.

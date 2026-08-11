@@ -180,21 +180,143 @@ const DEFAULT_MEDICINES = [
   { id: 135, brand: "TELCOZEN AMH", composition: "Telmisartan 40mg + Amlodipine 5mg + Hydrochlorothiazide 12.5mg", segment: "Cardio & Diabetic", packing: "1×10 Alu-Alu", mrp: "98.43" },
 ];
 
-// Initialize medicines in localStorage if not present
-function initMedicines() {
+const SUPABASE_URL = 'https://zikexvdxeuollfvaofqk.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_Z3RNDp4A8Vg5RB56fLwT9w_1wkSWahx';
+
+let clentisMedicinesCache = [];
+let clentisPresetsCache = [];
+let clentisSupabase = null;
+let clentisUsingSupabase = false;
+
+function normalizeMedicine(row) {
+  return {
+    id: Number(row.id),
+    brand: row.brand,
+    composition: row.composition,
+    segment: row.segment,
+    packing: row.packing || '-',
+    mrp: row.mrp || '-'
+  };
+}
+
+function normalizePreset(row) {
+  return {
+    id: Number(row.id),
+    doctorName: row.doctor_name || row.doctorName,
+    medicineIds: row.medicine_ids || row.medicineIds || [],
+    createdAt: row.created_at || row.createdAt,
+    updatedAt: row.updated_at || row.updatedAt
+  };
+}
+
+function initLocalMedicines() {
   const stored = localStorage.getItem('clentis_medicines');
   if (!stored) {
     localStorage.setItem('clentis_medicines', JSON.stringify(DEFAULT_MEDICINES));
   }
+  clentisMedicinesCache = JSON.parse(localStorage.getItem('clentis_medicines')) || [];
+  clentisPresetsCache = JSON.parse(localStorage.getItem('clentis_presets') || '[]');
+}
+
+async function initClentisData() {
+  initLocalMedicines();
+
+  if (!window.supabase) {
+    console.warn('Supabase library not loaded. Using browser storage fallback.');
+    return false;
+  }
+
+  try {
+    clentisSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+    const { data: medicines, error: medicinesError } = await clentisSupabase
+      .from('medicines')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (medicinesError) throw medicinesError;
+
+    if (!medicines || medicines.length === 0) {
+      const rows = DEFAULT_MEDICINES.map(m => ({
+        id: m.id,
+        brand: m.brand,
+        composition: m.composition,
+        segment: m.segment,
+        packing: m.packing || '-',
+        mrp: m.mrp || '-'
+      }));
+      const { error: seedError } = await clentisSupabase.from('medicines').upsert(rows, { onConflict: 'id' });
+      if (seedError) throw seedError;
+      clentisMedicinesCache = [...DEFAULT_MEDICINES];
+    } else {
+      clentisMedicinesCache = medicines.map(normalizeMedicine);
+    }
+
+    const { data: presets, error: presetsError } = await clentisSupabase
+      .from('presets')
+      .select('*')
+      .order('updated_at', { ascending: false });
+
+    if (presetsError) throw presetsError;
+
+    clentisPresetsCache = (presets || []).map(normalizePreset);
+    clentisUsingSupabase = true;
+    localStorage.setItem('clentis_medicines', JSON.stringify(clentisMedicinesCache));
+    localStorage.setItem('clentis_presets', JSON.stringify(clentisPresetsCache));
+    return true;
+  } catch (error) {
+    console.error('Supabase sync failed. Using browser storage fallback.', error);
+    clentisUsingSupabase = false;
+    return false;
+  }
+}
+
+function initMedicines() {
+  initLocalMedicines();
 }
 
 function getMedicines() {
-  initMedicines();
-  return JSON.parse(localStorage.getItem('clentis_medicines'));
+  return clentisMedicinesCache.length ? clentisMedicinesCache : DEFAULT_MEDICINES;
 }
 
-function saveMedicines(medicines) {
-  localStorage.setItem('clentis_medicines', JSON.stringify(medicines));
+async function saveMedicines(medicines) {
+  clentisMedicinesCache = [...medicines].sort((a, b) => a.id - b.id);
+  localStorage.setItem('clentis_medicines', JSON.stringify(clentisMedicinesCache));
+
+  if (!clentisUsingSupabase || !clentisSupabase) return;
+
+  const rows = clentisMedicinesCache.map(m => ({
+    id: m.id,
+    brand: m.brand,
+    composition: m.composition,
+    segment: m.segment,
+    packing: m.packing || '-',
+    mrp: m.mrp || '-'
+  }));
+
+  const { error } = await clentisSupabase.from('medicines').upsert(rows, { onConflict: 'id' });
+  if (error) throw error;
+}
+
+async function deleteMedicineById(id) {
+  clentisMedicinesCache = clentisMedicinesCache.filter(m => m.id !== id);
+  localStorage.setItem('clentis_medicines', JSON.stringify(clentisMedicinesCache));
+
+  if (!clentisUsingSupabase || !clentisSupabase) return;
+
+  const { error } = await clentisSupabase.from('medicines').delete().eq('id', id);
+  if (error) throw error;
+}
+
+async function resetMedicinesToDefault() {
+  clentisMedicinesCache = [...DEFAULT_MEDICINES];
+  localStorage.setItem('clentis_medicines', JSON.stringify(clentisMedicinesCache));
+
+  if (!clentisUsingSupabase || !clentisSupabase) return;
+
+  const { error: deleteError } = await clentisSupabase.from('medicines').delete().gte('id', 0);
+  if (deleteError) throw deleteError;
+  await saveMedicines(clentisMedicinesCache);
 }
 
 function getNextId() {
@@ -202,12 +324,34 @@ function getNextId() {
   return medicines.length > 0 ? Math.max(...medicines.map(m => m.id)) + 1 : 1;
 }
 
-// Doctor Presets
 function getPresets() {
-  const stored = localStorage.getItem('clentis_presets');
-  return stored ? JSON.parse(stored) : [];
+  return clentisPresetsCache;
 }
 
-function savePresets(presets) {
-  localStorage.setItem('clentis_presets', JSON.stringify(presets));
+async function savePresets(presets) {
+  clentisPresetsCache = [...presets].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+  localStorage.setItem('clentis_presets', JSON.stringify(clentisPresetsCache));
+
+  if (!clentisUsingSupabase || !clentisSupabase) return;
+
+  const rows = clentisPresetsCache.map(p => ({
+    id: p.id,
+    doctor_name: p.doctorName,
+    medicine_ids: p.medicineIds,
+    created_at: p.createdAt,
+    updated_at: p.updatedAt
+  }));
+
+  const { error } = await clentisSupabase.from('presets').upsert(rows, { onConflict: 'id' });
+  if (error) throw error;
+}
+
+async function deletePresetById(id) {
+  clentisPresetsCache = clentisPresetsCache.filter(p => p.id !== id);
+  localStorage.setItem('clentis_presets', JSON.stringify(clentisPresetsCache));
+
+  if (!clentisUsingSupabase || !clentisSupabase) return;
+
+  const { error } = await clentisSupabase.from('presets').delete().eq('id', id);
+  if (error) throw error;
 }

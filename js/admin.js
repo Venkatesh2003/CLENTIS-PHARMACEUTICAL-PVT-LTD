@@ -3,7 +3,7 @@
 // Medicine CRUD + PDF Upload
 // ═══════════════════════════════════════════════════════
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // State
   let editingId = null;
   let searchQuery = '';
@@ -19,9 +19,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const medicineForm = document.getElementById('medicine-form');
 
   // Init
-  initMedicines();
+  const synced = await initClentisData();
   renderTable();
   populateSegmentFilter();
+  showToast(synced ? 'Connected to shared Supabase database' : 'Using local browser storage. Run Supabase setup SQL to enable sharing.', synced ? 'success' : 'error');
 
   // ── Search & Filter ─────────────────────────────────
 
@@ -119,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
     openModal();
   };
 
-  window.saveMedicine = function() {
+  window.saveMedicine = async function() {
     const brand = document.getElementById('med-brand').value.trim();
     const composition = document.getElementById('med-composition').value.trim();
     const segment = document.getElementById('med-segment').value.trim();
@@ -133,58 +134,72 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let medicines = getMedicines();
 
-    if (editingId) {
-      // Update
-      const idx = medicines.findIndex(m => m.id === editingId);
-      if (idx > -1) {
-        medicines[idx] = { ...medicines[idx], brand, composition, segment, packing, mrp };
-      }
-      showToast(`${brand} updated successfully`, 'success');
-    } else {
-      // Add new
-      const newMed = {
-        id: getNextId(),
-        brand,
-        composition,
-        segment,
-        packing: packing || '-',
-        mrp: mrp || '-'
-      };
-      medicines.push(newMed);
-      showToast(`${brand} added successfully`, 'success');
-    }
+    const wasEditing = Boolean(editingId);
 
-    saveMedicines(medicines);
-    closeModal();
-    renderTable();
-    populateSegmentFilter();
+    try {
+      if (wasEditing) {
+        // Update
+        const idx = medicines.findIndex(m => m.id === editingId);
+        if (idx > -1) {
+          medicines[idx] = { ...medicines[idx], brand, composition, segment, packing, mrp };
+        }
+      } else {
+        // Add new
+        const newMed = {
+          id: getNextId(),
+          brand,
+          composition,
+          segment,
+          packing: packing || '-',
+          mrp: mrp || '-'
+        };
+        medicines.push(newMed);
+      }
+
+      await saveMedicines(medicines);
+      closeModal();
+      renderTable();
+      populateSegmentFilter();
+      showToast(wasEditing ? `${brand} updated successfully` : `${brand} added successfully`, 'success');
+    } catch (error) {
+      console.error(error);
+      showToast('Could not save medicine to Supabase', 'error');
+    }
   };
 
   // ── Delete Medicine ─────────────────────────────────
 
-  window.deleteMedicine = function(id) {
+  window.deleteMedicine = async function(id) {
     const medicines = getMedicines();
     const med = medicines.find(m => m.id === id);
     if (!med) return;
 
     if (!confirm(`Delete "${med.brand}"? This action cannot be undone.`)) return;
 
-    const updated = medicines.filter(m => m.id !== id);
-    saveMedicines(updated);
-    renderTable();
-    populateSegmentFilter();
-    showToast(`${med.brand} deleted`, 'success');
+    try {
+      await deleteMedicineById(id);
+      renderTable();
+      populateSegmentFilter();
+      showToast(`${med.brand} deleted`, 'success');
+    } catch (error) {
+      console.error(error);
+      showToast('Could not delete medicine from Supabase', 'error');
+    }
   };
 
   // ── Reset to Default ────────────────────────────────
 
-  window.resetToDefault = function() {
+  window.resetToDefault = async function() {
     if (!confirm('Reset all medicines to the original Clentis price list? Any custom additions will be lost.')) return;
-    localStorage.removeItem('clentis_medicines');
-    initMedicines();
-    renderTable();
-    populateSegmentFilter();
-    showToast('Medicine list reset to default', 'success');
+    try {
+      await resetMedicinesToDefault();
+      renderTable();
+      populateSegmentFilter();
+      showToast('Medicine list reset to default', 'success');
+    } catch (error) {
+      console.error(error);
+      showToast('Could not reset medicines in Supabase', 'error');
+    }
   };
 
   // ── PDF Upload ──────────────────────────────────────
