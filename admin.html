@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Admin Panel — Manage the Clentis Pharmaceutical medicine database. Add, edit, delete, and export medicines.">
+  <title>Admin Panel — Clentis Pharma</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+</head>
+<body>
+
+  <!-- ═══ Navbar ═══ -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-brand" style="text-decoration:none;">
+        <div class="navbar-logo">CP</div>
+        <div>
+          <div class="navbar-title">Clentis Pharmaceutical</div>
+          <div class="navbar-subtitle">PCD Marketing Suite</div>
+        </div>
+      </a>
+      <div class="navbar-links">
+        <a href="index.html" class="nav-link" id="nav-builder">
+          <span>📋</span> <span>Template Builder</span>
+        </a>
+        <a href="admin.html" class="nav-link active" id="nav-admin">
+          <span>⚙️</span> <span>Admin</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══ Main Content ═══ -->
+  <div class="app-container">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1 class="page-title">Medicine Management</h1>
+      <p class="page-desc">Add, edit, delete, and manage your pharmaceutical product database.</p>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="card" style="margin-bottom:24px;">
+      <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;">
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;flex:1;min-width:200px;">
+          <input type="text" id="admin-search" class="form-input" placeholder="🔍 Search medicines..." style="max-width:320px;">
+          <select id="segment-filter" class="form-select" style="max-width:200px;">
+            <option value="all">All Segments</option>
+          </select>
+          <span style="font-size:0.8rem;color:var(--clr-text-muted);" id="total-count">0 medicines</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <button class="btn btn-primary" onclick="openAddModal()">➕ Add Medicine</button>
+          <button class="btn btn-secondary" onclick="exportData()">📥 Export CSV</button>
+          <button class="btn btn-secondary" onclick="triggerPdfUpload()">📄 Upload PDF</button>
+          <button class="btn btn-danger btn-sm" onclick="resetToDefault()">🔄 Reset</button>
+          <input type="file" id="pdf-upload" accept=".pdf" style="display:none;">
+        </div>
+      </div>
+    </div>
+
+    <!-- Medicine Table -->
+    <div class="card" style="padding:0;margin-bottom:40px;">
+      <div class="admin-table-wrapper" style="max-height:600px;overflow-y:auto;">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width:50px;">#</th>
+              <th>Brand Name</th>
+              <th>Composition</th>
+              <th>Segment</th>
+              <th>Packing</th>
+              <th>MRP</th>
+              <th style="width:90px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="medicine-table-body">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══ Add/Edit Modal ═══ -->
+  <div class="modal-overlay" id="medicine-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title">Add New Medicine</h2>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <form id="medicine-form" onsubmit="event.preventDefault(); saveMedicine();">
+        <div class="form-group">
+          <label class="form-label" for="med-brand">Brand Name *</label>
+          <input type="text" id="med-brand" class="form-input" placeholder="e.g. ACICORD SP" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="med-composition">Composition *</label>
+          <textarea id="med-composition" class="form-textarea" placeholder="e.g. Aceclofenac 100mg + Paracetamol 325mg" required></textarea>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label" for="med-segment">Segment *</label>
+            <input type="text" id="med-segment" class="form-input" placeholder="e.g. Orthopedic" list="segment-suggestions" required>
+            <datalist id="segment-suggestions">
+              <option value="Orthopedic">
+              <option value="Antibiotic">
+              <option value="Gastro">
+              <option value="Respiratory">
+              <option value="Miscellaneous">
+              <option value="Soft Gelatin">
+              <option value="Liquid">
+              <option value="Dry Syrup">
+              <option value="Ointment">
+              <option value="Injection">
+              <option value="Cardio & Diabetic">
+            </datalist>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="med-packing">Packing</label>
+            <input type="text" id="med-packing" class="form-input" placeholder="e.g. 1×10 Alu-Alu">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="med-mrp">MRP (₹)</label>
+          <input type="text" id="med-mrp" class="form-input" placeholder="e.g. 99.00">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">💾 Save Medicine</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="js/medicines-data.js"></script>
+  <script src="js/admin.js"></script>
+
+</body>
+</html>
