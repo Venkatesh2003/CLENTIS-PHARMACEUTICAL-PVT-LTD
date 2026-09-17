@@ -220,17 +220,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       `;
     }).join('');
 
-    const drSection = doctorName ? `
+    const drSection = `
       <div class="template-dr-section">
-        <div class="template-dr-label">With Compliments From</div>
-        <div class="template-dr-name">Dr. ${doctorName}</div>
+        ${doctorName ? `
+          <div class="template-dr-label">With Compliments From</div>
+          <div class="template-dr-name">Dr. ${doctorName}</div>
+        ` : ''}
       </div>
-    ` : '';
+    `;
 
     previewArea.innerHTML = `
       <div class="marketing-template" id="printable-template">
         <div class="template-inner">
           <div class="template-header">
+            ${drSection}
             <div class="template-company-info">
               <div class="template-company-logo">CP</div>
               <div>
@@ -238,9 +241,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="template-company-tag">An ISO 9001:2015 Certified Company</div>
               </div>
             </div>
-            ${drSection}
           </div>
           <div class="template-medicines" data-count="${count}">
+            <div class="template-rx" title="Take thou">Rx</div>
             ${medCardsHtml}
           </div>
           <div class="template-footer">

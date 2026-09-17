@@ -756,6 +756,7 @@ a:hover { color: var(--clr-primary-300); }
   display: flex;
   align-items: center;
   gap: 12px;
+  text-align: right;
 }
 
 .template-company-logo {
@@ -793,7 +794,8 @@ a:hover { color: var(--clr-primary-300); }
 }
 
 .template-dr-section {
-  text-align: right;
+  text-align: left;
+  min-width: 180px;
 }
 
 .template-dr-label {
@@ -819,7 +821,21 @@ a:hover { color: var(--clr-primary-300); }
   grid-template-columns: repeat(4, 1fr);
   gap: 6px;
   align-content: center;
-  padding: 8px 0;
+  padding: 32px 0 8px;
+  position: relative;
+}
+
+.template-rx {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  z-index: 1;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #005238;
+  opacity: 0.95;
 }
 
 .med-card {
