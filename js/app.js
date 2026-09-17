@@ -235,7 +235,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="template-header">
             ${drSection}
             <div class="template-company-info">
-              <div class="template-company-logo">CP</div>
               <div>
                 <div class="template-company-name">CLENTIS PHARMACEUTICAL PVT LTD</div>
                 <div class="template-company-tag">An ISO 9001:2015 Certified Company</div>

@@ -821,21 +821,22 @@ a:hover { color: var(--clr-primary-300); }
   grid-template-columns: repeat(4, 1fr);
   gap: 6px;
   align-content: center;
-  padding: 32px 0 8px;
+  padding: 26px 0 8px;
   position: relative;
 }
 
 .template-rx {
   position: absolute;
-  top: 2px;
+  top: 0;
   left: 0;
   z-index: 1;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 1.45rem;
-  font-weight: 700;
+  font-family: 'Brush Script MT', 'Segoe Script', 'Lucida Handwriting', cursive;
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-style: italic;
   line-height: 1;
   color: #005238;
-  opacity: 0.95;
+  opacity: 0.9;
 }
 
 .med-card {
