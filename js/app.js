@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
           </div>
           <div class="template-medicines" data-count="${count}">
-            <div class="template-rx" title="Take thou">Rx</div>
+            <div class="template-prescribe">Please do prescribe</div>
             ${medCardsHtml}
           </div>
           <div class="template-footer">

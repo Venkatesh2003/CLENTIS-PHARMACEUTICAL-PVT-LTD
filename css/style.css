@@ -849,18 +849,18 @@ a:hover { color: var(--clr-primary-300); }
   position: relative;
 }
 
-.template-rx {
+.template-prescribe {
   position: absolute;
   top: 0;
   left: 0;
   z-index: 1;
-  font-family: 'Brush Script MT', 'Segoe Script', 'Lucida Handwriting', cursive;
-  font-size: 1.05rem;
-  font-weight: 600;
-  font-style: italic;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   line-height: 1;
   color: #005238;
-  opacity: 0.9;
+  opacity: 0.92;
 }
 
 .med-card {
