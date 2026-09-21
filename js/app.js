@@ -223,7 +223,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const drSection = `
       <div class="template-dr-section">
         ${doctorName ? `
-          <div class="template-dr-label">With Compliments From</div>
           <div class="template-dr-name">Dr. ${doctorName}</div>
         ` : ''}
       </div>
