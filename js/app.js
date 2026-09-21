@@ -220,19 +220,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       `;
     }).join('');
 
-    const drSection = `
-      <div class="template-dr-section">
-        ${doctorName ? `
-          <div class="template-dr-name">Dr. ${doctorName}</div>
-        ` : ''}
-      </div>
-    `;
-
-    previewArea.innerHTML = `
-      <div class="marketing-template" id="printable-template">
+    const renderMarketingTemplate = (templateId, recipientName) => `
+      <div class="marketing-template" id="${templateId}" data-print-template="${templateId}">
         <div class="template-inner">
           <div class="template-header">
-            ${drSection}
+            <div class="template-dr-section">
+              ${recipientName ? `<div class="template-dr-name">${recipientName}</div>` : ''}
+            </div>
             <div class="template-company-info">
               <div>
                 <div class="template-company-name">CLENTIS PHARMACEUTICAL PVT LTD</div>
@@ -253,6 +247,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
       </div>
     `;
+
+    previewArea.innerHTML = `
+      <div class="template-preview-stack">
+        <div class="template-preview-item" data-print-item="doctor">
+          <div class="template-preview-label no-print">
+            <span>Doctor Name Template</span>
+            <button class="btn btn-secondary btn-sm" onclick="printTemplate('doctor')">Print</button>
+          </div>
+          ${renderMarketingTemplate('printable-template-doctor', doctorName ? `Dr. ${doctorName}` : '')}
+        </div>
+        <div class="template-preview-item" data-print-item="respected">
+          <div class="template-preview-label no-print">
+            <span>Respected Doctor Template</span>
+            <button class="btn btn-secondary btn-sm" onclick="printTemplate('respected')">Print</button>
+          </div>
+          ${renderMarketingTemplate('printable-template-respected', 'Respected Doctor')}
+        </div>
+      </div>
+    `;
   }
 
   function truncateComposition(comp) {
@@ -262,12 +275,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ── Print ───────────────────────────────────────────
 
-  window.printTemplate = function() {
+  window.printTemplate = function(templateType = 'doctor') {
     if (selectedMedicines.length === 0) {
       showToast('Please select at least one medicine first', 'error');
       return;
     }
+    document.body.classList.remove('print-doctor', 'print-respected', 'print-both');
+    document.body.classList.add(`print-${templateType}`);
     window.print();
+    setTimeout(() => {
+      document.body.classList.remove('print-doctor', 'print-respected', 'print-both');
+    }, 500);
   };
 
   // ── Presets ─────────────────────────────────────────

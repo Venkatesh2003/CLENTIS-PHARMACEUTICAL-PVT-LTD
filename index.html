@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="PCD Marketing Template Generator for Clentis Pharmaceutical Pvt Ltd — Create professional marketing materials for doctors featuring your pharmaceutical products.">
   <title>Clentis Pharma — PCD Marketing Template Builder</title>
-  <link rel="stylesheet" href="css/style.css?v=20260921-dr1">
+  <link rel="stylesheet" href="css/style.css?v=20260921-dual1">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💊</text></svg>">
 </head>
 <body>
@@ -64,8 +64,14 @@
           </div>
           <!-- Action Buttons -->
           <div class="flex flex-col gap-2">
-            <button class="btn btn-primary w-full" onclick="printTemplate()">
-              🖨️ Print Template
+            <button class="btn btn-primary w-full" onclick="printTemplate('doctor')">
+              🖨️ Print Doctor Template
+            </button>
+            <button class="btn btn-secondary w-full" onclick="printTemplate('respected')">
+              🖨️ Print Respected Doctor
+            </button>
+            <button class="btn btn-ghost w-full" onclick="printTemplate('both')">
+              🖨️ Print Both Templates
             </button>
             <div class="flex gap-2">
               <button class="btn btn-secondary" style="flex:1;" onclick="savePreset()">
@@ -129,8 +135,8 @@
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/medicines-data.js?v=20260921-dr1"></script>
-  <script src="js/app.js?v=20260921-dr1"></script>
+  <script src="js/medicines-data.js?v=20260921-dual1"></script>
+  <script src="js/app.js?v=20260921-dual1"></script>
 
 </body>
 </html>
