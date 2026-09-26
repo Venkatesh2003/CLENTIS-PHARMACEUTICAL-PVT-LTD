@@ -235,7 +235,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
           </div>
           <div class="template-medicines" data-count="${count}">
-            <div class="template-prescribe">Please do prescribe</div>
+            <div class="template-prescribe">
+              <div class="template-prescribe-greeting">Respected Doctor,</div>
+              <div class="template-prescribe-text">Please do prescribe</div>
+            </div>
             ${medCardsHtml}
           </div>
           <div class="template-footer">
@@ -262,7 +265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <span>Respected Doctor Template</span>
             <button class="btn btn-secondary btn-sm" onclick="printTemplate('respected')">Print</button>
           </div>
-          ${renderMarketingTemplate('printable-template-respected', 'Respected Doctor')}
+          ${renderMarketingTemplate('printable-template-respected', '')}
         </div>
       </div>
     `;
