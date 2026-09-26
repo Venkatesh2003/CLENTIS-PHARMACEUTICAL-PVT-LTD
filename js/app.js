@@ -75,42 +75,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       );
     }
 
-    // Group by segment
-    const grouped = {};
-    filtered.forEach(m => {
-      if (!grouped[m.segment]) grouped[m.segment] = [];
-      grouped[m.segment].push(m);
-    });
+    const alphabeticalMedicines = [...filtered].sort((a, b) =>
+      a.brand.localeCompare(b.brand, undefined, { sensitivity: 'base' })
+    );
 
     let html = '';
-    const segmentOrder = [
-      'Orthopedic', 'Antibiotic', 'Gastro', 'Respiratory',
-      'Miscellaneous', 'Soft Gelatin', 'Liquid', 'Dry Syrup',
-      'Ointment', 'Injection', 'Cardio & Diabetic'
-    ];
-
-    const segments = segmentOrder.filter(s => grouped[s]);
-    // Add any segments not in predefined order
-    Object.keys(grouped).forEach(s => {
-      if (!segments.includes(s)) segments.push(s);
-    });
-
-    if (segments.length === 0) {
+    if (alphabeticalMedicines.length === 0) {
       html = '<div class="dropdown-no-results">No medicines found matching your search</div>';
     } else {
-      segments.forEach(seg => {
-        html += `<div class="dropdown-segment-label">${seg}</div>`;
-        grouped[seg].forEach(m => {
-          const isSelected = selectedMedicines.some(s => s.id === m.id);
-          html += `
-            <div class="dropdown-item ${isSelected ? 'selected' : ''}" data-id="${m.id}">
-              <div style="flex:1;min-width:0;">
-                <div class="dropdown-item-brand">${highlightMatch(m.brand, query)}</div>
-                <div class="dropdown-item-comp">${highlightMatch(m.composition, query)}</div>
-              </div>
+      alphabeticalMedicines.forEach(m => {
+        const isSelected = selectedMedicines.some(s => s.id === m.id);
+        html += `
+          <div class="dropdown-item ${isSelected ? 'selected' : ''}" data-id="${m.id}">
+            <div style="flex:1;min-width:0;">
+              <div class="dropdown-item-brand">${highlightMatch(m.brand, query)}</div>
+              <div class="dropdown-item-comp">${highlightMatch(m.composition, query)}</div>
             </div>
-          `;
-        });
+          </div>
+        `;
       });
     }
 
@@ -211,10 +193,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       const mrpHtml = (showMrp && m.mrp && m.mrp !== '-') 
         ? `<div class="med-card-mrp">MRP ₹${m.mrp}</div>` 
         : '';
+      const compositionClass = m.composition.length > 110 ? ' med-card-comp--long' : '';
       return `
         <div class="med-card">
           <div class="med-card-brand">${m.brand}</div>
-          <div class="med-card-comp">${truncateComposition(m.composition)}</div>
+          <div class="med-card-comp${compositionClass}">${m.composition}</div>
           ${mrpHtml}
         </div>
       `;
@@ -269,11 +252,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
       </div>
     `;
-  }
-
-  function truncateComposition(comp) {
-    if (comp.length > 80) return comp.substring(0, 77) + '...';
-    return comp;
   }
 
   // ── Print ───────────────────────────────────────────
