@@ -461,6 +461,32 @@ a:hover { color: var(--clr-primary-300); }
   line-height: 1;
 }
 
+.selected-pill .move-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--clr-primary-200);
+  font-size: 0.7rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.selected-pill .move-pill:hover:not(:disabled) {
+  background: rgba(0, 212, 152, 0.18);
+  color: var(--clr-primary-50);
+}
+
+.selected-pill .move-pill:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
 .selected-pill .remove-pill:hover {
   background: rgba(239, 68, 68, 0.3);
   color: #ef4444;

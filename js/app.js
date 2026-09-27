@@ -137,10 +137,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function renderSelectedPills() {
     let html = '';
-    selectedMedicines.forEach(m => {
+    selectedMedicines.forEach((m, index) => {
       html += `
         <span class="selected-pill" data-id="${m.id}">
           ${m.brand}
+          <button class="move-pill" data-id="${m.id}" data-direction="-1" title="Move up" aria-label="Move ${m.brand} up" ${index === 0 ? 'disabled' : ''}>↑</button>
+          <button class="move-pill" data-id="${m.id}" data-direction="1" title="Move down" aria-label="Move ${m.brand} down" ${index === selectedMedicines.length - 1 ? 'disabled' : ''}>↓</button>
           <button class="remove-pill" data-id="${m.id}" title="Remove">✕</button>
         </span>
       `;
@@ -163,6 +165,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         toggleMedicine(id);
       });
     });
+
+    selectedPillsContainer.querySelectorAll('.move-pill').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        moveMedicine(parseInt(btn.dataset.id), parseInt(btn.dataset.direction));
+      });
+    });
+  }
+
+  function moveMedicine(id, direction) {
+    const index = selectedMedicines.findIndex(m => m.id === id);
+    const targetIndex = index + direction;
+    if (index < 0 || targetIndex < 0 || targetIndex >= selectedMedicines.length) return;
+
+    [selectedMedicines[index], selectedMedicines[targetIndex]] = [selectedMedicines[targetIndex], selectedMedicines[index]];
+    renderSelectedPills();
+    updatePreview();
   }
 
   // ── Template Preview ────────────────────────────────
