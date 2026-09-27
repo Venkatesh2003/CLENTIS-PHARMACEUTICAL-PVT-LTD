@@ -832,7 +832,7 @@ a:hover { color: var(--clr-primary-300); }
   font-family: var(--font-heading);
   font-size: 0.88rem;
   font-weight: 800;
-  color: #005238;
+  color: #e85d04;
   line-height: 1.2;
   letter-spacing: 0.02em;
 }
@@ -895,7 +895,7 @@ a:hover { color: var(--clr-primary-300); }
   font-weight: 700;
   letter-spacing: 0.02em;
   line-height: 1.2;
-  color: #005238;
+  color: #111111;
   opacity: 0.92;
 }
 
@@ -1298,6 +1298,16 @@ a:hover { color: var(--clr-primary-300); }
     border-bottom: 2px solid #00b882 !important;
     padding-bottom: 3mm;
     margin-bottom: 3mm;
+  }
+
+  .template-company-name {
+    color: #e85d04 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .template-prescribe {
+    color: #111111 !important;
   }
 
   .template-company-logo {
