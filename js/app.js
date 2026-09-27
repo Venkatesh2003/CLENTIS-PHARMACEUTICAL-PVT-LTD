@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // DOM Elements
   const doctorInput = document.getElementById('doctor-name');
+  const hospitalInput = document.getElementById('hospital-name');
   const searchInput = document.getElementById('medicine-search');
   const multiSelectTrigger = document.getElementById('multi-select-trigger');
   const dropdown = document.getElementById('medicine-dropdown');
@@ -168,12 +169,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Live update on doctor name change
   doctorInput.addEventListener('input', () => updatePreview());
+  hospitalInput.addEventListener('input', () => updatePreview());
 
   // Live update on MRP toggle change
   showMrpToggle.addEventListener('change', () => updatePreview());
 
   function updatePreview() {
     const doctorName = doctorInput.value.trim();
+    const hospitalName = hospitalInput.value.trim();
 
     if (selectedMedicines.length === 0) {
       previewArea.innerHTML = `
@@ -211,12 +214,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       `;
     }).join('');
 
-    const renderMarketingTemplate = (templateId, recipientName) => `
+    const renderMarketingTemplate = (templateId, recipientName, recipientHospital = '') => `
       <div class="marketing-template" id="${templateId}" data-print-template="${templateId}">
         <div class="template-inner">
           <div class="template-header">
             <div class="template-dr-section">
               ${recipientName ? `<div class="template-dr-name">${recipientName}</div>` : ''}
+              ${recipientHospital ? `<div class="template-hospital-name">${recipientHospital}</div>` : ''}
             </div>
             <div class="template-company-info">
               <div>
@@ -249,7 +253,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <span>Doctor Name Template</span>
             <button class="btn btn-secondary btn-sm" onclick="printTemplate('doctor')">Print</button>
           </div>
-          ${renderMarketingTemplate('printable-template-doctor', doctorName ? `Dr. ${doctorName}` : '')}
+          ${renderMarketingTemplate('printable-template-doctor', doctorName ? `Dr. ${doctorName}` : '', hospitalName)}
         </div>
         <div class="template-preview-item" data-print-item="respected">
           <div class="template-preview-label no-print">
@@ -296,6 +300,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const preset = {
       id: existingIdx > -1 ? presets[existingIdx].id : Date.now(),
       doctorName: doctorName,
+      hospitalName: hospitalInput.value.trim(),
       medicineIds: selectedMedicines.map(m => m.id),
       createdAt: existingIdx > -1 ? presets[existingIdx].createdAt : new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -356,6 +361,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const medicines = getMedicines();
     doctorInput.value = preset.doctorName;
+    hospitalInput.value = preset.hospitalName || '';
     selectedMedicines = preset.medicineIds
       .map(id => medicines.find(m => m.id === id))
       .filter(Boolean);
@@ -381,6 +387,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.clearSelection = function() {
     selectedMedicines = [];
     doctorInput.value = '';
+    hospitalInput.value = '';
     searchInput.value = '';
     searchQuery = '';
     renderSelectedPills();

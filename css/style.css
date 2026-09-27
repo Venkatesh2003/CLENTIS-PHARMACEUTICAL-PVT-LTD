@@ -838,6 +838,14 @@ a:hover { color: var(--clr-primary-300); }
   margin-top: 2px;
 }
 
+.template-hospital-name {
+  margin-top: 2px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #475569;
+  line-height: 1.2;
+}
+
 /* Medicine Grid — Fixed uniform layout */
 .template-medicines {
   flex: 1;
@@ -1360,6 +1368,10 @@ a:hover { color: var(--clr-primary-300); }
 
   .template-dr-name {
     font-size: 0.85rem;
+  }
+
+  .template-hospital-name {
+    font-size: 0.55rem;
   }
 
   .med-card {
