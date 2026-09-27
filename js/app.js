@@ -21,6 +21,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   const previewArea = document.getElementById('template-preview');
   const presetList = document.getElementById('preset-list');
   const showMrpToggle = document.getElementById('show-mrp');
+  const medicineFontSelect = document.getElementById('medicine-font');
+  const doctorFontSelect = document.getElementById('doctor-font');
+  const hospitalFontSelect = document.getElementById('hospital-font');
+
+  const fontFamilies = {
+    outfit: "'Outfit', 'Inter', sans-serif",
+    inter: "'Inter', sans-serif",
+    merriweather: "'Merriweather', Georgia, serif",
+    lora: "'Lora', Georgia, serif",
+    'roboto-slab': "'Roboto Slab', Georgia, serif"
+  };
+
+  const savedFontSettings = JSON.parse(localStorage.getItem('clentis_template_fonts') || '{}');
+  medicineFontSelect.value = savedFontSettings.medicine || 'outfit';
+  doctorFontSelect.value = savedFontSettings.doctor || 'outfit';
+  hospitalFontSelect.value = savedFontSettings.hospital || 'inter';
 
   // ── Initialize ──────────────────────────────────────
   const synced = await initClentisData();
@@ -76,9 +92,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       );
     }
 
-    const alphabeticalMedicines = [...filtered].sort((a, b) =>
-      a.brand.localeCompare(b.brand, undefined, { sensitivity: 'base' })
-    );
+    const favoriteMedicineIds = getFavoriteIds('clentis_favorite_medicine_ids');
+    const alphabeticalMedicines = [...filtered].sort((a, b) => {
+      const favoriteDifference = Number(favoriteMedicineIds.has(b.id)) - Number(favoriteMedicineIds.has(a.id));
+      return favoriteDifference || a.brand.localeCompare(b.brand, undefined, { sensitivity: 'base' });
+    });
 
     let html = '';
     if (alphabeticalMedicines.length === 0) {
@@ -86,12 +104,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       alphabeticalMedicines.forEach(m => {
         const isSelected = selectedMedicines.some(s => s.id === m.id);
+        const isFavorite = favoriteMedicineIds.has(m.id);
         html += `
           <div class="dropdown-item ${isSelected ? 'selected' : ''}" data-id="${m.id}">
             <div style="flex:1;min-width:0;">
               <div class="dropdown-item-brand">${highlightMatch(m.brand, query)}</div>
               <div class="dropdown-item-comp">${highlightMatch(m.composition, query)}</div>
             </div>
+            <button class="favorite-medicine ${isFavorite ? 'is-favorite' : ''}" data-id="${m.id}" title="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}" aria-label="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}">${isFavorite ? '★' : '☆'}</button>
           </div>
         `;
       });
@@ -106,6 +126,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         toggleMedicine(id);
       });
     });
+
+    dropdown.querySelectorAll('.favorite-medicine').forEach(button => {
+      button.addEventListener('click', (event) => {
+        event.stopPropagation();
+        toggleFavoriteMedicine(parseInt(button.dataset.id));
+      });
+    });
   }
 
   function highlightMatch(text, query) {
@@ -116,6 +143,31 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function escapeRegex(str) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function getFavoriteIds(storageKey) {
+    try {
+      return new Set(JSON.parse(localStorage.getItem(storageKey) || '[]').map(Number));
+    } catch {
+      return new Set();
+    }
+  }
+
+  function saveFavoriteIds(storageKey, ids) {
+    localStorage.setItem(storageKey, JSON.stringify([...ids]));
+  }
+
+  function toggleFavoriteMedicine(id) {
+    const favoriteIds = getFavoriteIds('clentis_favorite_medicine_ids');
+    if (favoriteIds.has(id)) {
+      favoriteIds.delete(id);
+      showToast('Medicine removed from favorites', 'success');
+    } else {
+      favoriteIds.add(id);
+      showToast('Medicine added to favorites', 'success');
+    }
+    saveFavoriteIds('clentis_favorite_medicine_ids', favoriteIds);
+    renderDropdown();
   }
 
   function toggleMedicine(id) {
@@ -170,6 +222,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Live update on doctor name change
   doctorInput.addEventListener('input', () => updatePreview());
   hospitalInput.addEventListener('input', () => updatePreview());
+  [medicineFontSelect, doctorFontSelect, hospitalFontSelect].forEach(select => {
+    select.addEventListener('change', () => {
+      localStorage.setItem('clentis_template_fonts', JSON.stringify({
+        medicine: medicineFontSelect.value,
+        doctor: doctorFontSelect.value,
+        hospital: hospitalFontSelect.value
+      }));
+      updatePreview();
+    });
+  });
 
   // Live update on MRP toggle change
   showMrpToggle.addEventListener('change', () => updatePreview());
@@ -177,6 +239,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   function updatePreview() {
     const doctorName = doctorInput.value.trim();
     const hospitalName = hospitalInput.value.trim();
+    const medicineFont = fontFamilies[medicineFontSelect.value];
+    const doctorFont = fontFamilies[doctorFontSelect.value];
+    const hospitalFont = fontFamilies[hospitalFontSelect.value];
 
     if (selectedMedicines.length === 0) {
       previewArea.innerHTML = `
@@ -206,7 +271,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const compositionClass = m.composition.length > 110 ? ' med-card-comp--long' : '';
       const medicineColor = medicineColors[index % medicineColors.length];
       return `
-        <div class="med-card" style="--medicine-color: ${medicineColor};">
+        <div class="med-card" style="--medicine-color: ${medicineColor}; --medicine-font: ${medicineFont};">
           <div class="med-card-brand">${m.brand}</div>
           <div class="med-card-comp${compositionClass}">${m.composition}</div>
           ${mrpHtml}
@@ -218,7 +283,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       <div class="marketing-template" id="${templateId}" data-print-template="${templateId}">
         <div class="template-inner">
           <div class="template-header">
-            <div class="template-dr-section">
+            <div class="template-dr-section" style="--doctor-font: ${doctorFont}; --hospital-font: ${hospitalFont};">
               ${recipientName ? `<div class="template-dr-name">${recipientName}</div>` : ''}
               ${recipientHospital ? `<div class="template-hospital-name">${recipientHospital}</div>` : ''}
             </div>
@@ -324,6 +389,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function renderPresets() {
     const presets = getPresets();
+    const favoritePresetIds = getFavoriteIds('clentis_favorite_preset_ids');
+    const orderedPresets = [...presets].sort((a, b) => {
+      const favoriteDifference = Number(favoritePresetIds.has(b.id)) - Number(favoritePresetIds.has(a.id));
+      return favoriteDifference || new Date(b.updatedAt) - new Date(a.updatedAt);
+    });
     
     if (presets.length === 0) {
       presetList.innerHTML = `
@@ -337,7 +407,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     let html = '';
-    presets.forEach(p => {
+    orderedPresets.forEach(p => {
+      const isFavorite = favoritePresetIds.has(p.id);
       html += `
         <div class="preset-item" data-id="${p.id}">
           <div class="preset-item-click" style="flex:1;cursor:pointer;" onclick="loadPreset(${p.id})">
@@ -345,6 +416,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="preset-count">${p.medicineIds.length} medicine${p.medicineIds.length !== 1 ? 's' : ''}</div>
           </div>
           <div class="preset-actions">
+            <button class="favorite-preset ${isFavorite ? 'is-favorite' : ''}" onclick="togglePresetFavorite(${p.id})" title="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}" aria-label="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}">${isFavorite ? '★' : '☆'}</button>
             <button class="btn btn-ghost btn-sm" onclick="loadPreset(${p.id})" title="Load">📋</button>
             <button class="btn btn-ghost btn-sm" onclick="deletePreset(${p.id})" title="Delete">🗑️</button>
           </div>
@@ -353,6 +425,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     presetList.innerHTML = html;
   }
+
+  window.togglePresetFavorite = function(presetId) {
+    const favoriteIds = getFavoriteIds('clentis_favorite_preset_ids');
+    if (favoriteIds.has(presetId)) {
+      favoriteIds.delete(presetId);
+      showToast('Preset removed from favorites', 'success');
+    } else {
+      favoriteIds.add(presetId);
+      showToast('Preset added to favorites', 'success');
+    }
+    saveFavoriteIds('clentis_favorite_preset_ids', favoriteIds);
+    renderPresets();
+  };
 
   window.loadPreset = function(presetId) {
     const presets = getPresets();
@@ -376,6 +461,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!confirm('Delete this preset?')) return;
     try {
       await deletePresetById(presetId);
+      const favoriteIds = getFavoriteIds('clentis_favorite_preset_ids');
+      favoriteIds.delete(presetId);
+      saveFavoriteIds('clentis_favorite_preset_ids', favoriteIds);
       renderPresets();
       showToast('Preset deleted', 'success');
     } catch (error) {
