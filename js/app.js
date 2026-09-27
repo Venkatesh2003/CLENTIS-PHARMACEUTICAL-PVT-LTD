@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const doctorInput = document.getElementById('doctor-name');
   const hospitalInput = document.getElementById('hospital-name');
   const presetReferenceInput = document.getElementById('preset-reference');
+  const presetReferenceHelp = document.getElementById('preset-reference-help');
   const searchInput = document.getElementById('medicine-search');
   const multiSelectTrigger = document.getElementById('multi-select-trigger');
   const dropdown = document.getElementById('medicine-dropdown');
@@ -28,10 +29,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const synced = await initClentisData();
   renderDropdown();
   renderPresets();
+  updateNextSerialHint();
   updatePreview();
   showToast(synced ? 'Connected to shared Supabase database' : 'Using local browser storage. Run Supabase setup SQL to enable sharing.', synced ? 'success' : 'error');
 
   presetSearchInput.addEventListener('input', () => renderPresets());
+  doctorInput.addEventListener('input', () => updateNextSerialHint());
 
   // ── Multi-Select Dropdown ───────────────────────────
 
@@ -331,6 +334,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ── Presets ─────────────────────────────────────────
 
+  function getNextSerialNumber(doctorName) {
+    const serialNumbers = getPresets()
+      .filter(preset => preset.doctorName.toLowerCase() === doctorName.toLowerCase())
+      .map(preset => Number.parseInt(preset.referenceNumber, 10))
+      .filter(Number.isFinite);
+    return serialNumbers.length ? Math.max(...serialNumbers) + 1 : 1;
+  }
+
+  function updateNextSerialHint() {
+    const doctorName = doctorInput.value.trim();
+    if (!doctorName) {
+      presetReferenceHelp.textContent = 'Enter a doctor name to assign the next serial automatically.';
+      return;
+    }
+    presetReferenceHelp.textContent = `Next serial for Dr. ${doctorName}: ${getNextSerialNumber(doctorName)}`;
+  }
+
+  window.startNextPreset = function() {
+    const doctorName = doctorInput.value.trim();
+    if (!doctorName) {
+      showToast('Enter the doctor name first', 'error');
+      return;
+    }
+    presetReferenceInput.value = '';
+    updateNextSerialHint();
+    showToast(`The next preset will use serial ${getNextSerialNumber(doctorName)}`, 'success');
+  };
+
   window.savePreset = async function() {
     const doctorName = doctorInput.value.trim();
     if (!doctorName) {
@@ -343,7 +374,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const presets = getPresets();
-    const referenceNumber = presetReferenceInput.value.trim();
+    const typedReferenceNumber = presetReferenceInput.value.trim();
+    const referenceNumber = typedReferenceNumber || String(getNextSerialNumber(doctorName));
     const existingIdx = referenceNumber
       ? presets.findIndex(p =>
         p.doctorName.toLowerCase() === doctorName.toLowerCase() &&
@@ -370,7 +402,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       await savePresets(presets);
       renderPresets();
-      showToast(existingIdx > -1 ? `Preset ${referenceNumber} updated for Dr. ${doctorName}` : `Preset saved for Dr. ${doctorName}`, 'success');
+      if (existingIdx > -1) {
+        showToast(`Preset ${referenceNumber} updated for Dr. ${doctorName}`, 'success');
+      } else {
+        presetReferenceInput.value = '';
+        updateNextSerialHint();
+        showToast(`Preset ${referenceNumber} saved for Dr. ${doctorName}`, 'success');
+      }
     } catch (error) {
       console.error(error);
       const needsDatabaseUpdate = error?.code === '23505' || /hospital_name|reference_number/i.test(error?.message || '');
@@ -420,7 +458,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               ${orderedPresets.map((preset, index) => `
                 <div class="preset-item" data-id="${preset.id}">
                   <button class="preset-item-click" onclick="loadPreset(${preset.id})" title="Load this preset">
-                    <span class="preset-name">${escapeHtml(preset.referenceNumber || `Preset ${index + 1}`)}</span>
+                    <span class="preset-name">#${escapeHtml(preset.referenceNumber || String(index + 1))}</span>
                     <span class="preset-count">${preset.medicineIds.length} medicine${preset.medicineIds.length !== 1 ? 's' : ''}${preset.hospitalName ? ` · ${escapeHtml(preset.hospitalName)}` : ''}</span>
                   </button>
                   <div class="preset-actions">
@@ -451,6 +489,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     doctorInput.value = preset.doctorName;
     hospitalInput.value = preset.hospitalName || '';
     presetReferenceInput.value = preset.referenceNumber || '';
+    presetReferenceHelp.textContent = `Editing serial ${preset.referenceNumber || '1'} for Dr. ${preset.doctorName}.`;
     selectedMedicines = preset.medicineIds
       .map(id => medicines.find(m => m.id === id))
       .filter(Boolean);
@@ -483,6 +522,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     doctorInput.value = '';
     hospitalInput.value = '';
     presetReferenceInput.value = '';
+    updateNextSerialHint();
     searchInput.value = '';
     searchQuery = '';
     renderSelectedPills();
