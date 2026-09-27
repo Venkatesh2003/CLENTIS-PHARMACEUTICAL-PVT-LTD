@@ -189,13 +189,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     const count = selectedMedicines.length;
     const showMrp = showMrpToggle.checked;
 
-    let medCardsHtml = selectedMedicines.map(m => {
+    const medicineColors = [
+      '#0e7490', '#be123c', '#6d28d9', '#b45309',
+      '#047857', '#1d4ed8', '#c2410c', '#9d174d',
+      '#4d7c0f', '#7e22ce', '#0369a1', '#b91c1c',
+      '#15803d', '#a16207', '#4338ca', '#0f766e'
+    ];
+
+    let medCardsHtml = selectedMedicines.map((m, index) => {
       const mrpHtml = (showMrp && m.mrp && m.mrp !== '-') 
         ? `<div class="med-card-mrp">MRP ₹${m.mrp}</div>` 
         : '';
       const compositionClass = m.composition.length > 110 ? ' med-card-comp--long' : '';
+      const medicineColor = medicineColors[index % medicineColors.length];
       return `
-        <div class="med-card">
+        <div class="med-card" style="--medicine-color: ${medicineColor};">
           <div class="med-card-brand">${m.brand}</div>
           <div class="med-card-comp${compositionClass}">${m.composition}</div>
           ${mrpHtml}

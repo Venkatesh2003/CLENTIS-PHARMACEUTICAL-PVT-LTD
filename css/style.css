@@ -875,7 +875,7 @@ a:hover { color: var(--clr-primary-300); }
   padding: 8px 9px;
   background: #ffffff;
   border: 1.5px solid #e0e7ef;
-  border-left: 3px solid #0e8a6d;
+  border-left: 3px solid var(--medicine-color, #0e8a6d);
   border-radius: 10px;
   text-align: center;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
@@ -885,7 +885,7 @@ a:hover { color: var(--clr-primary-300); }
   font-family: var(--font-heading);
   font-size: 0.86rem;
   font-weight: 800;
-  color: #0e6e5c;
+  color: var(--medicine-color, #0e6e5c);
   line-height: 1.2;
   margin-bottom: 2px;
   letter-spacing: 0.01em;
@@ -1232,7 +1232,7 @@ a:hover { color: var(--clr-primary-300); }
 
   .med-card {
     border: 1.5px solid #e0e7ef !important;
-    border-left: 3px solid #0e8a6d !important;
+    border-left: 3px solid var(--medicine-color, #0e8a6d) !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     background: #ffffff !important;
@@ -1240,7 +1240,7 @@ a:hover { color: var(--clr-primary-300); }
   }
 
   .med-card-brand {
-    color: #0e6e5c !important;
+    color: var(--medicine-color, #0e6e5c) !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
