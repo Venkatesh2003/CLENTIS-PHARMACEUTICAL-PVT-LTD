@@ -203,6 +203,8 @@ function normalizePreset(row) {
   return {
     id: Number(row.id),
     doctorName: row.doctor_name || row.doctorName,
+    hospitalName: row.hospital_name || row.hospitalName || '',
+    referenceNumber: row.reference_number || row.referenceNumber || '',
     medicineIds: row.medicine_ids || row.medicineIds || [],
     createdAt: row.created_at || row.createdAt,
     updatedAt: row.updated_at || row.updatedAt
@@ -337,6 +339,8 @@ async function savePresets(presets) {
   const rows = clentisPresetsCache.map(p => ({
     id: p.id,
     doctor_name: p.doctorName,
+    hospital_name: p.hospitalName || '',
+    reference_number: p.referenceNumber || '',
     medicine_ids: p.medicineIds,
     created_at: p.createdAt,
     updated_at: p.updatedAt

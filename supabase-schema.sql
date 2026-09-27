@@ -10,11 +10,17 @@ create table if not exists public.medicines (
 
 create table if not exists public.presets (
   id bigint primary key,
-  doctor_name text not null unique,
+  doctor_name text not null,
+  hospital_name text default '',
+  reference_number text default '',
   medicine_ids integer[] not null default '{}',
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+
+alter table public.presets add column if not exists hospital_name text default '';
+alter table public.presets add column if not exists reference_number text default '';
+alter table public.presets drop constraint if exists presets_doctor_name_key;
 
 alter table public.medicines enable row level security;
 alter table public.presets enable row level security;

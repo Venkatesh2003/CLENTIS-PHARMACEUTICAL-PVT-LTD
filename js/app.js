@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // DOM Elements
   const doctorInput = document.getElementById('doctor-name');
   const hospitalInput = document.getElementById('hospital-name');
+  const presetReferenceInput = document.getElementById('preset-reference');
   const searchInput = document.getElementById('medicine-search');
   const multiSelectTrigger = document.getElementById('multi-select-trigger');
   const dropdown = document.getElementById('medicine-dropdown');
@@ -20,6 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const selectionCount = document.getElementById('selection-count');
   const previewArea = document.getElementById('template-preview');
   const presetList = document.getElementById('preset-list');
+  const presetSearchInput = document.getElementById('preset-search');
   const showMrpToggle = document.getElementById('show-mrp');
 
   // ── Initialize ──────────────────────────────────────
@@ -28,6 +30,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderPresets();
   updatePreview();
   showToast(synced ? 'Connected to shared Supabase database' : 'Using local browser storage. Run Supabase setup SQL to enable sharing.', synced ? 'success' : 'error');
+
+  presetSearchInput.addEventListener('input', () => renderPresets());
 
   // ── Multi-Select Dropdown ───────────────────────────
 
@@ -339,12 +343,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const presets = getPresets();
-    const existingIdx = presets.findIndex(p => p.doctorName.toLowerCase() === doctorName.toLowerCase());
+    const referenceNumber = presetReferenceInput.value.trim();
+    const existingIdx = referenceNumber
+      ? presets.findIndex(p =>
+        p.doctorName.toLowerCase() === doctorName.toLowerCase() &&
+        (p.referenceNumber || '').toLowerCase() === referenceNumber.toLowerCase()
+      )
+      : -1;
     
     const preset = {
       id: existingIdx > -1 ? presets[existingIdx].id : Date.now(),
       doctorName: doctorName,
       hospitalName: hospitalInput.value.trim(),
+      referenceNumber: referenceNumber,
       medicineIds: selectedMedicines.map(m => m.id),
       createdAt: existingIdx > -1 ? presets[existingIdx].createdAt : new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -359,43 +370,76 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       await savePresets(presets);
       renderPresets();
-      showToast(existingIdx > -1 ? `Preset updated for Dr. ${doctorName}` : `Preset saved for Dr. ${doctorName}`, 'success');
+      showToast(existingIdx > -1 ? `Preset ${referenceNumber} updated for Dr. ${doctorName}` : `Preset saved for Dr. ${doctorName}`, 'success');
     } catch (error) {
       console.error(error);
-      showToast('Could not save preset to Supabase', 'error');
+      const needsDatabaseUpdate = error?.code === '23505' || /hospital_name|reference_number/i.test(error?.message || '');
+      showToast(needsDatabaseUpdate ? 'Run the latest Supabase schema SQL once to save multiple presets' : 'Could not save preset to Supabase', 'error');
     }
   };
 
   function renderPresets() {
-    const presets = getPresets();
+    const searchQuery = presetSearchInput.value.trim().toLowerCase();
+    const presets = getPresets().filter(p =>
+      !searchQuery ||
+      p.doctorName.toLowerCase().includes(searchQuery) ||
+      (p.referenceNumber || '').toLowerCase().includes(searchQuery) ||
+      (p.hospitalName || '').toLowerCase().includes(searchQuery)
+    );
     
     if (presets.length === 0) {
       presetList.innerHTML = `
         <div class="empty-state">
           <div class="icon">📁</div>
-          <p style="font-size:0.85rem;">No saved presets yet</p>
+          <p style="font-size:0.85rem;">No saved presets found</p>
           <p style="font-size:0.75rem;color:var(--clr-text-muted);">Save a doctor + medicines combination to create a preset</p>
         </div>
       `;
       return;
     }
 
-    let html = '';
-    presets.forEach(p => {
-      html += `
-        <div class="preset-item" data-id="${p.id}">
-          <div class="preset-item-click" style="flex:1;cursor:pointer;" onclick="loadPreset(${p.id})">
-            <div class="preset-name">Dr. ${p.doctorName}</div>
-            <div class="preset-count">${p.medicineIds.length} medicine${p.medicineIds.length !== 1 ? 's' : ''}</div>
-          </div>
-          <div class="preset-actions">
-            <button class="btn btn-ghost btn-sm" onclick="loadPreset(${p.id})" title="Load">📋</button>
-            <button class="btn btn-ghost btn-sm" onclick="deletePreset(${p.id})" title="Delete">🗑️</button>
-          </div>
-        </div>
-      `;
+    const doctorGroups = new Map();
+    presets.forEach(preset => {
+      const key = preset.doctorName.trim().toLowerCase();
+      if (!doctorGroups.has(key)) doctorGroups.set(key, { doctorName: preset.doctorName, presets: [] });
+      doctorGroups.get(key).presets.push(preset);
     });
+
+    let html = '';
+    [...doctorGroups.values()]
+      .sort((a, b) => a.doctorName.localeCompare(b.doctorName))
+      .forEach(group => {
+        const orderedPresets = group.presets.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+        html += `
+          <details class="preset-doctor-group" ${searchQuery ? 'open' : ''}>
+            <summary>
+              <span class="preset-doctor-name">Dr. ${escapeHtml(group.doctorName)}</span>
+              <span class="preset-doctor-total">${orderedPresets.length} preset${orderedPresets.length !== 1 ? 's' : ''}</span>
+            </summary>
+            <div class="preset-sub-list">
+              ${orderedPresets.map((preset, index) => `
+                <div class="preset-item" data-id="${preset.id}">
+                  <button class="preset-item-click" onclick="loadPreset(${preset.id})" title="Load this preset">
+                    <span class="preset-name">${escapeHtml(preset.referenceNumber || `Preset ${index + 1}`)}</span>
+                    <span class="preset-count">${preset.medicineIds.length} medicine${preset.medicineIds.length !== 1 ? 's' : ''}${preset.hospitalName ? ` · ${escapeHtml(preset.hospitalName)}` : ''}</span>
+                  </button>
+                  <div class="preset-actions">
+                    <button class="btn btn-ghost btn-sm" onclick="printSavedPreset(${preset.id})" title="Load and print">🖨️</button>
+                    <button class="btn btn-ghost btn-sm" onclick="deletePreset(${preset.id})" title="Delete">🗑️</button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </details>
+        `;
+      });
     presetList.innerHTML = html;
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>'"]/g, character => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    })[character]);
   }
 
   window.loadPreset = function(presetId) {
@@ -406,6 +450,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const medicines = getMedicines();
     doctorInput.value = preset.doctorName;
     hospitalInput.value = preset.hospitalName || '';
+    presetReferenceInput.value = preset.referenceNumber || '';
     selectedMedicines = preset.medicineIds
       .map(id => medicines.find(m => m.id === id))
       .filter(Boolean);
@@ -414,6 +459,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderDropdown();
     updatePreview();
     showToast(`Loaded preset for Dr. ${preset.doctorName}`, 'success');
+  };
+
+  window.printSavedPreset = function(presetId) {
+    window.loadPreset(presetId);
+    window.requestAnimationFrame(() => window.printTemplate('doctor'));
   };
 
   window.deletePreset = async function(presetId) {
@@ -432,6 +482,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     selectedMedicines = [];
     doctorInput.value = '';
     hospitalInput.value = '';
+    presetReferenceInput.value = '';
     searchInput.value = '';
     searchQuery = '';
     renderSelectedPills();

@@ -23,4 +23,4 @@ This app is ready to publish from the repository root using GitHub Pages.
 
 The app uses Supabase for shared medicines and doctor presets across phone, PC, and any other device.
 
-Before using the shared database, open your Supabase project, go to **SQL Editor**, and run the SQL in `supabase-schema.sql` once.
+Before using the shared database, open your Supabase project, go to **SQL Editor**, and run the SQL in `supabase-schema.sql`. Run it again after updates: it safely adds new fields and enables multiple serial-numbered presets for the same doctor.
