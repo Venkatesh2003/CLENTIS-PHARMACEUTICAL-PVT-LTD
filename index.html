@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="PCD Marketing Template Generator for Clentis Pharmaceutical Pvt Ltd — Create professional marketing materials for doctors featuring your pharmaceutical products.">
   <title>Clentis Pharma — PCD Marketing Template Builder</title>
-  <link rel="stylesheet" href="css/style.css?v=20260927-auto-serial1">
+  <link rel="stylesheet" href="css/style.css?v=20260927-flat-presets1">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💊</text></svg>">
 </head>
 <body>
@@ -60,12 +60,8 @@
             <input type="text" id="hospital-name" class="form-input" placeholder="e.g. City Care Hospital" autocomplete="off">
           </div>
           <div class="form-group">
-            <label class="form-label" for="preset-reference">Preset Serial No.</label>
-            <div class="preset-reference-row">
-              <input type="text" id="preset-reference" class="form-input" placeholder="Automatic next serial" autocomplete="off">
-              <button class="btn btn-ghost btn-sm" type="button" onclick="startNextPreset()" title="Use the next serial number">Next</button>
-            </div>
-            <div class="preset-reference-help" id="preset-reference-help">Leave empty to assign the next serial automatically.</div>
+            <label class="form-label" for="preset-reference">Preset Number (Optional, not printed)</label>
+            <input type="text" id="preset-reference" class="form-input" placeholder="e.g. 2 or 3" autocomplete="off">
           </div>
           <!-- MRP Toggle -->
           <div class="form-group" style="margin-bottom:16px;">
@@ -151,8 +147,8 @@
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/medicines-data.js?v=20260927-auto-serial1"></script>
-  <script src="js/app.js?v=20260927-auto-serial1"></script>
+  <script src="js/medicines-data.js?v=20260927-flat-presets1"></script>
+  <script src="js/app.js?v=20260927-flat-presets1"></script>
 
 </body>
 </html>
