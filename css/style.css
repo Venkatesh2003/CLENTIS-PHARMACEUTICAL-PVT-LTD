@@ -440,6 +440,21 @@ a:hover { color: var(--clr-primary-300); }
   white-space: nowrap;
 }
 
+.selected-pill,
+.med-card {
+  cursor: grab;
+}
+
+.selected-pill.is-dragging,
+.med-card.is-dragging {
+  opacity: 0.45;
+}
+
+.selected-pill.is-drop-target {
+  outline: 2px dashed var(--clr-primary-300);
+  outline-offset: 2px;
+}
+
 @keyframes pillIn {
   from { transform: scale(0.8); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
@@ -461,30 +476,17 @@ a:hover { color: var(--clr-primary-300); }
   line-height: 1;
 }
 
-.selected-pill .move-pill {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  padding: 0;
-  border: none;
-  border-radius: 3px;
-  background: transparent;
+.drag-handle {
   color: var(--clr-primary-200);
-  font-size: 0.7rem;
-  cursor: pointer;
+  cursor: grab;
+  font-size: 0.85rem;
   line-height: 1;
 }
 
-.selected-pill .move-pill:hover:not(:disabled) {
-  background: rgba(0, 212, 152, 0.18);
-  color: var(--clr-primary-50);
-}
-
-.selected-pill .move-pill:disabled {
-  cursor: default;
-  opacity: 0.35;
+.med-card.is-drop-target {
+  border-color: var(--medicine-color, #0e8a6d);
+  outline: 2px dashed var(--medicine-color, #0e8a6d);
+  outline-offset: 2px;
 }
 
 .selected-pill .remove-pill:hover {

@@ -137,12 +137,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function renderSelectedPills() {
     let html = '';
-    selectedMedicines.forEach((m, index) => {
+    selectedMedicines.forEach(m => {
       html += `
-        <span class="selected-pill" data-id="${m.id}">
+        <span class="selected-pill" data-id="${m.id}" draggable="true">
+          <span class="drag-handle" title="Drag to reorder" aria-hidden="true">⠿</span>
           ${m.brand}
-          <button class="move-pill" data-id="${m.id}" data-direction="-1" title="Move up" aria-label="Move ${m.brand} up" ${index === 0 ? 'disabled' : ''}>↑</button>
-          <button class="move-pill" data-id="${m.id}" data-direction="1" title="Move down" aria-label="Move ${m.brand} down" ${index === selectedMedicines.length - 1 ? 'disabled' : ''}>↓</button>
           <button class="remove-pill" data-id="${m.id}" title="Remove">✕</button>
         </span>
       `;
@@ -166,20 +165,45 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     });
 
-    selectedPillsContainer.querySelectorAll('.move-pill').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        moveMedicine(parseInt(btn.dataset.id), parseInt(btn.dataset.direction));
+    bindDragAndDrop(selectedPillsContainer.querySelectorAll('.selected-pill'));
+  }
+
+  function bindDragAndDrop(items) {
+    items.forEach(item => {
+      item.addEventListener('dragstart', (event) => {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', item.dataset.id);
+        item.classList.add('is-dragging');
+      });
+
+      item.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        item.classList.add('is-drop-target');
+      });
+
+      item.addEventListener('dragleave', () => item.classList.remove('is-drop-target'));
+
+      item.addEventListener('drop', (event) => {
+        event.preventDefault();
+        reorderMedicine(parseInt(event.dataTransfer.getData('text/plain')), parseInt(item.dataset.id));
+      });
+
+      item.addEventListener('dragend', () => {
+        document.querySelectorAll('.is-dragging, .is-drop-target').forEach(element => {
+          element.classList.remove('is-dragging', 'is-drop-target');
+        });
       });
     });
   }
 
-  function moveMedicine(id, direction) {
-    const index = selectedMedicines.findIndex(m => m.id === id);
-    const targetIndex = index + direction;
-    if (index < 0 || targetIndex < 0 || targetIndex >= selectedMedicines.length) return;
+  function reorderMedicine(draggedId, targetId) {
+    const draggedIndex = selectedMedicines.findIndex(m => m.id === draggedId);
+    const targetIndex = selectedMedicines.findIndex(m => m.id === targetId);
+    if (draggedIndex < 0 || targetIndex < 0 || draggedIndex === targetIndex) return;
 
-    [selectedMedicines[index], selectedMedicines[targetIndex]] = [selectedMedicines[targetIndex], selectedMedicines[index]];
+    const [draggedMedicine] = selectedMedicines.splice(draggedIndex, 1);
+    selectedMedicines.splice(targetIndex, 0, draggedMedicine);
     renderSelectedPills();
     updatePreview();
   }
@@ -225,7 +249,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const compositionClass = m.composition.length > 110 ? ' med-card-comp--long' : '';
       const medicineColor = medicineColors[index % medicineColors.length];
       return `
-        <div class="med-card" style="--medicine-color: ${medicineColor};">
+        <div class="med-card" data-id="${m.id}" draggable="true" style="--medicine-color: ${medicineColor};">
           <div class="med-card-brand">${m.brand}</div>
           <div class="med-card-comp${compositionClass}">${m.composition}</div>
           ${mrpHtml}
@@ -283,6 +307,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
       </div>
     `;
+    bindDragAndDrop(previewArea.querySelectorAll('.med-card'));
   }
 
   // ── Print ───────────────────────────────────────────
