@@ -300,7 +300,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <span>Doctor Name Template</span>
             <button class="btn btn-secondary btn-sm" onclick="printTemplate('doctor')">Print</button>
           </div>
-          ${renderMarketingTemplate('printable-template-doctor', doctorName ? `Dr. ${doctorName}` : '', hospitalName)}
+          ${renderMarketingTemplate('printable-template-doctor', doctorName, hospitalName)}
         </div>
         <div class="template-preview-item" data-print-item="respected">
           <div class="template-preview-label no-print">
